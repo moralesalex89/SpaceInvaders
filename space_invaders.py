@@ -1,5 +1,3 @@
-import sys
-import time
 import pygame
 from pygame.sprite import Group
 
@@ -11,8 +9,6 @@ from sound import Sound
 from button import Button
 from ship import Ship
 from timer import Timer
-from alien import Alien
-from barrier import Barrier
 from ufo import UFO
 import game_functions as gf
 
@@ -58,17 +54,16 @@ def run_game():
 
         if stats.game_active:
             gf.update_timers(alien_timer, ufo_timer, ship_timer, smoke_timer)
-            gf.update_ship(stats, sb, highscores, ship, aliens, ufo, bullets, alien_bullets, ship_timer)
+            gf.update_ship(stats, sb, highscores, ship, aliens, ufo, bullets, alien_bullets, ship_timer, alien_timer)
             if not ship.hit:
-                gf.update_bullets(ai_settings, screen, stats, sb,  ship, aliens, ufo,
+                gf.update_bullets(ai_settings, screen, sounds, stats, sb,  ship, aliens, ufo,
                                   bullets, barriers, alien_bullets, smokes, alien_timer, ufo_timer, smoke_timer)
-                gf.update_aliens(ai_settings, screen, sounds, stats, sb, ship, aliens,
-                                 bullets, barriers, alien_bullets, alien_timer)
+                gf.update_aliens(ai_settings, screen, sounds, ship, aliens, barriers, alien_bullets, alien_timer)
                 gf.update_ufo(ufo, ufo_timer)
                 gf.update_smokes(smokes, smoke_timer)
 
-        gf.update_screen(ai_settings, screen, stats, sb, ship, aliens, ufo, bullets, menu_bg, play_button, high_score_button,
-                         barriers, alien_bullets, smokes)
+        gf.update_screen(ai_settings, screen, stats, sb, ship, aliens, ufo, bullets, menu_bg,
+                         play_button, high_score_button, barriers, alien_bullets, smokes)
 
 
 run_game()

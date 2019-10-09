@@ -4,7 +4,7 @@ from pygame.sprite import Group
 from ship import Ship
 
 
-class Scoreboard():
+class Scoreboard:
 
     def __init__(self, ai_settings, screen, sounds, stats):
         self.screen = screen

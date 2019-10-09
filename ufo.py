@@ -6,16 +6,7 @@ ufo_c = pygame.image.load('images/ufo_c.png')
 ufo_d = pygame.image.load('images/ufo_d.png')
 ufo_e = pygame.image.load('images/ufo_e.png')
 ufo_f = pygame.image.load('images/ufo_f.png')
-d_ufo_a = ''
-d_ufo_b = ''
-sound_a = ''
-sound_b = ''
-pygame.init()
-ufo_sound = pygame.mixer.Sound('sounds/ufo_highpitch.wav')
-
 ufo = [ufo_a, ufo_b, ufo_c, ufo_d, ufo_e, ufo_f]
-d_ufo = [d_ufo_a, d_ufo_b]
-sound = [sound_a, sound_b]
 
 
 class UFO:
@@ -27,12 +18,34 @@ class UFO:
         self.rect.right = 0
         self.rect.bottom = ai_settings.alien_start_pos_y - ai_settings.alien_space_factor
         self.state = 0
-        self.score = 1000
         self.hit = False
         self.sounds = sounds
 
     def blitme(self):
         self.screen.blit(self.image, self.rect)
+
+    def get_score(self):
+        multiplier = 1.0
+        if self.state == 1:
+            multiplier = abs((self.rect.centerx - self.ai_settings.screen_width) / self.ai_settings.screen_width)
+        elif self.state == 2:
+            multiplier = abs(self.rect.centerx / self.ai_settings.screen_width)
+
+        if multiplier > 1:
+            multiplier = 1
+        elif multiplier < 0:
+            multiplier = 0
+
+        # using 4000 as an example of base score, UFO has minimum score value of 1/4 (1000) of its base score
+        # value returned depends on how far the UFO traveled relative to its starting side and decreases
+        # linearly with the multiplier of the other 3/4 of the score being between 0-1 depending on where it is hit
+        base = self.ai_settings.alien_points_ufo / 10
+        score = round(((3 / 4 * base) * multiplier) + (1 / 4 * base))
+        # base score initially divided by 10 and the * 10 is given back down here
+        # this is to make all returned scores divisible by 10 so it always returns a "Nice" value
+        score *= 10
+        print("UFO gave you " + str(score) + " points.")
+        return score
 
     def set_spawn(self, is_left):
         if self.sounds.ufo_loop is False:
@@ -60,8 +73,6 @@ class UFO:
         frame += 1
         frame = frame % len(ufo)
         self.image = ufo[frame]
-#        if frame / 2 == 0:
-#            ufo_sound.play()
 
     def active(self):
         if self.state == 0:
@@ -74,7 +85,7 @@ class UFO:
         self.hit = True
         self.rect.right = 0
         self.sounds.ufo_stop()
-        self.sounds.shoot_play()
+        self.sounds.d_ufo_play()
 
     def reset(self):
         self.state = 0

@@ -5,7 +5,6 @@ import math
 import pygame
 from bullet import Bullet
 from alien import Alien
-from ufo import UFO
 from barrier import Barrier
 from smoke import Smoke
 
@@ -47,12 +46,10 @@ def check_events(ai_settings, screen, sounds, stats, sb, highscores, play_button
                     press_play_button(ai_settings, screen, sounds, stats, sb, play_button, ship,
                                       aliens, bullets, barriers, alien_bullets, smokes, mouse_x, mouse_y)
                 elif high_score_button.press(mouse_x, mouse_y):
-                    press_high_score_button(ai_settings, screen, stats, sb, highscores, play_button, ship,
-                                            aliens, bullets, barriers, alien_bullets, smokes, mouse_x, mouse_y)
+                    press_high_score_button(ai_settings, screen, highscores)
 
 
-def press_high_score_button(ai_settings, screen, stats, sb, highscores, play_button,
-                              ship, aliens, bullets, barriers, alien_bullets, smokes, mouse_x, mouse_y):
+def press_high_score_button(ai_settings, screen, highscores):
     screen.fill(ai_settings.bg_color)
     posy = 200
     font = pygame.font.SysFont(None, 48)
@@ -75,7 +72,8 @@ def press_high_score_button(ai_settings, screen, stats, sb, highscores, play_but
     sleep(3)
 
 
-def press_play_button(ai_settings, screen, sounds, stats, sb, play_button, ship, aliens, bullets, barriers, alien_bullets, smokes, mouse_x, mouse_y):
+def press_play_button(ai_settings, screen, sounds, stats, sb,
+                      play_button, ship, aliens, bullets, barriers, alien_bullets, smokes, mouse_x, mouse_y):
     button_clicked = play_button.rect.collidepoint(mouse_x, mouse_y)
     if button_clicked and not stats.game_active:
         ai_settings.initialize_dynamic_settings()
@@ -121,7 +119,7 @@ def update_screen(ai_settings, screen, stats, sb, ship, aliens, ufo, bullets,
     pygame.display.flip()
 
 
-def update_bullets(ai_settings, screen, stats, sb, ship, aliens, ufo,
+def update_bullets(ai_settings, screen, sounds, stats, sb, ship, aliens, ufo,
                    bullets, barriers, alien_bullets, smokes, alien_timer, ufo_timer, smoke_timer):
     bullets.update()
     alien_bullets.update()
@@ -133,14 +131,14 @@ def update_bullets(ai_settings, screen, stats, sb, ship, aliens, ufo,
         if alien_bullet.rect.top >= ai_settings.screen_height:
             alien_bullets.remove(alien_bullet)
 
-    check_bullet_alien_collisions(ai_settings, screen, stats, sb, ship, aliens, ufo,
+    check_bullet_alien_collisions(ai_settings, screen, sounds, stats, sb, ship, aliens, ufo,
                                   bullets, barriers, alien_bullets, smokes, alien_timer, ufo_timer, smoke_timer)
     check_bullet_ufo_collision(ai_settings, screen, stats, sb, ufo, bullets, smokes)
-    check_bullet_barrier_collisions(ai_settings, screen, bullets, barriers, alien_bullets)
-    check_bullet_ship_collisions(ai_settings, screen, stats, sb, ship, bullets, alien_bullets)
+    check_bullet_barrier_collisions(bullets, barriers, alien_bullets)
+    check_bullet_ship_collisions(ship, alien_bullets)
 
 
-def check_bullet_ship_collisions(ai_settings, screen, stats, sb, ship, bullets, alien_bullets):
+def check_bullet_ship_collisions(ship, alien_bullets):
     collision = pygame.sprite.spritecollideany(ship, alien_bullets)
     if collision:
         ship.destroy()
@@ -150,13 +148,13 @@ def check_bullet_ufo_collision(ai_settings, screen, stats, sb, ufo, bullets, smo
     if pygame.sprite.spritecollide(ufo, bullets, True):
         new_smoke = Smoke(ai_settings, screen, 3, ufo.rect.copy())
         smokes.add(new_smoke)
-        ufo.destroy()
-        stats.score += ufo.score
+        stats.score += ufo.get_score()
         sb.prep_score()
         check_high_score(stats, sb)
+        ufo.destroy()
 
 
-def check_bullet_alien_collisions(ai_settings, screen, stats, sb, ship, aliens, ufo,
+def check_bullet_alien_collisions(ai_settings, screen, sounds, stats, sb, ship, aliens, ufo,
                                   bullets, barriers, alien_bullets, smokes, alien_timer, ufo_timer, smoke_timer):
     collisions = pygame.sprite.groupcollide(bullets, aliens, True, False)
 
@@ -167,9 +165,7 @@ def check_bullet_alien_collisions(ai_settings, screen, stats, sb, ship, aliens, 
                 smokes.add(new_smoke)
                 alien.hit()
                 # increases speed of aliens the fewer of them there are
-#                alien_timer.update(alien_timer.default * (((len(aliens) / (ai_settings.alien_fleet_cols
-#                                                                           * ai_settings.alien_fleet_rows)) + 3) / 4))
-                stats.score += alien.score
+                stats.score += alien.get_score()
                 sb.prep_score()
         check_high_score(stats, sb)
 
@@ -177,6 +173,7 @@ def check_bullet_alien_collisions(ai_settings, screen, stats, sb, ship, aliens, 
         alien_timer.reset()
         ufo_timer.reset()
         smoke_timer.reset()
+        aliens.empty()
         ship.center_ship()
         bullets.empty()
         alien_bullets.empty()
@@ -188,11 +185,11 @@ def check_bullet_alien_collisions(ai_settings, screen, stats, sb, ship, aliens, 
         stats.level += 1
         sb.prep_level()
 
-        create_fleet(ai_settings, screen, aliens)
+        create_fleet(ai_settings, screen, sounds, aliens)
         create_barriers(ai_settings, screen, barriers)
 
 
-def check_bullet_barrier_collisions(ai_settings, screen, bullets, barriers, alien_bullets):
+def check_bullet_barrier_collisions(bullets, barriers, alien_bullets):
     # check for collisions between barriers and both alien and bullet collision
     player_bullet_collisions = pygame.sprite.groupcollide(bullets, barriers, True, False)
     alien_bullet_collisions = pygame.sprite.groupcollide(alien_bullets, barriers, True, False)
@@ -220,7 +217,8 @@ def create_alien(ai_settings, screen, sounds, aliens, alien_number, row_number, 
     alien.x = \
         ai_settings.alien_start_pos_x + (ai_settings.alien_width - alien.rect.width) / 2 + \
         (ai_settings.alien_width + ai_settings.alien_space_factor) * alien_number
-    alien.rect.top = ai_settings.alien_start_pos_y + (row_number * (ai_settings.alien_height + ai_settings.alien_space_factor))
+    alien.rect.top = ai_settings.alien_start_pos_y + (row_number
+                                                      * (ai_settings.alien_height + ai_settings.alien_space_factor))
     alien.save_spawn()
     aliens.add(alien)
 
@@ -231,7 +229,7 @@ def create_fleet(ai_settings, screen, sounds, aliens):
         for alien_number in range(ai_settings.alien_fleet_cols):
             create_alien(ai_settings, screen, sounds, aliens, alien_number,
                          row_number, int(math.floor(math.sqrt(2 * (row_number + 1)) + 1/2) + 2) % 3, alt_frame)
-            alt_frame = not alt_frame
+#            alt_frame = not alt_frame
 
 
 def check_fleet_edges(ai_settings, aliens):
@@ -251,7 +249,7 @@ def change_fleet_direction(ai_settings, aliens):
     ai_settings.fleet_direction *= -1
 
 
-def ship_hit(stats, sb, highscores, ship, aliens, ufo, bullets, alien_bullets):
+def ship_hit(stats, sb, highscores, ship, aliens, ufo, bullets, alien_bullets, alien_timer):
     if stats.ships_left > 0:
         stats.ships_left -= 1
 
@@ -263,14 +261,16 @@ def ship_hit(stats, sb, highscores, ship, aliens, ufo, bullets, alien_bullets):
             alien.respawn()
         sleep(1)
     else:
+        alien_timer.reset()
         ufo.reset()
         highscores.check_place(int(round(stats.score, -1)))
         highscores.print()
+        sleep(1)
         stats.game_active = False
         pygame.mouse.set_visible(True)
 
 
-def check_aliens_bottom(screen, stats, sb, ship, aliens, bullets, alien_bullets):
+def check_aliens_bottom(screen, ship, aliens):
     screen_rect = screen.get_rect()
     for alien in aliens.sprites():
         if alien.rect.bottom >= screen_rect.bottom:
@@ -278,8 +278,9 @@ def check_aliens_bottom(screen, stats, sb, ship, aliens, bullets, alien_bullets)
             break
 
 
-def alien_attack(ai_settings, screen, sounds, aliens, alien_bullets):
-    attacker_id = random.randrange(len(aliens))
+def alien_attack(ai_settings, screen, aliens, alien_bullets):
+    alien_count = len(aliens)
+    attacker_id = random.randrange(alien_count)
     attacker_count = 0
     for alien in aliens:
         if attacker_count == attacker_id:
@@ -289,25 +290,32 @@ def alien_attack(ai_settings, screen, sounds, aliens, alien_bullets):
         attacker_count += 1
 
 
-def update_aliens(ai_settings, screen, sounds, stats, sb, ship, aliens, bullets, barriers, alien_bullets, alien_timer):
-    check_fleet_edges(ai_settings, aliens)
-    aliens.update()
+def update_aliens(ai_settings, screen, sounds, ship, aliens, barriers, alien_bullets, alien_timer):
+    if len(aliens) > 0:
+        check_fleet_edges(ai_settings, aliens)
+        aliens.update()
 
-    # animate all live aliens with each tick
-    if alien_timer.check():
-        for alien in aliens:
-            alien.rotate()
-        alien_attack(ai_settings, screen, sounds, aliens, alien_bullets)
+        # animate all live aliens with each tick
+        if alien_timer.check():
+            for alien in aliens:
+                alien.rotate()
+            alien_attack(ai_settings, screen, aliens, alien_bullets)
+            sounds.move_play()
+            # decreases the refresh rate based on how many aliens are remaining, speeds up alien animations and firerate
+            # max speed is 2x faster than the default
+            alien_timer.update(int((alien_timer.default * 1.0 / 2.0)
+                                   + ((1.0 / 2.0 * alien_timer.default)
+                                      * (len(aliens) / (ai_settings.alien_fleet_cols * ai_settings.alien_fleet_rows)))))
 
-    # checks if any aliens have have collided with the ship
-    if pygame.sprite.spritecollideany(ship, aliens):
-        ship.hit = True
+        # checks if any aliens have have collided with the ship
+        if pygame.sprite.spritecollideany(ship, aliens):
+            ship.hit = True
 
-    # checks if any aliens have reached the bottom of the screen
-    check_aliens_bottom(screen, stats, sb, ship, aliens, bullets, alien_bullets)
+        # checks if any aliens have reached the bottom of the screen
+        check_aliens_bottom(screen, ship, aliens)
 
-    # checks if any aliens have collided with a barrier to destroy that barrier
-    check_alien_barrier_collision(aliens, barriers)
+        # checks if any aliens have collided with a barrier to destroy that barrier
+        check_alien_barrier_collision(aliens, barriers)
 
 
 def update_smokes(smokes, smoke_timer):
@@ -358,13 +366,13 @@ def create_barriers(ai_settings, screen, barriers):
         saved_x += 300
 
 
-def update_ship(stats, sb, highscores, ship, aliens, ufo, bullets, alien_bullets, ship_timer):
+def update_ship(stats, sb, highscores, ship, aliens, ufo, bullets, alien_bullets, ship_timer, alien_timer):
     if not ship.hit:
         ship.update()
     else:
         if ship_timer.check():
             if ship.play_death():
-                ship_hit(stats, sb, highscores, ship, aliens, ufo, bullets, alien_bullets)
+                ship_hit(stats, sb, highscores, ship, aliens, ufo, bullets, alien_bullets, alien_timer)
 
 
 def menu_screen(menu_bg, play_button, high_score_button):

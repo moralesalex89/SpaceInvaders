@@ -30,12 +30,6 @@ class HighScore:
     def print(self):
         print(self.hs_list)
 
-    def check_score(self, score):
-        if score <= self.base:
-            return False
-        else:
-            return True
-
     def check_place(self, score):
         pos = 0
         for rank in self.hs_list:
@@ -44,14 +38,13 @@ class HighScore:
             else:
                 break
 
-        entry = [str(score), 'TST']
+        entry = [str(score), 'Player']
         self.hs_list.insert(pos, entry)
         self.hs_list.pop()
 
         if pos < 10:
             self.save_scores()
             self.read_list()
-            self.print()
 
     def get_highscore(self):
         return int(self.hs_list[0][0])

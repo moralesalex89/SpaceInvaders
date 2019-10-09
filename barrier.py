@@ -1,4 +1,3 @@
-import pygame
 from pygame.sprite import *
 
 barrier_tl = pygame.image.load("images/barrier_tl.png")
@@ -19,7 +18,7 @@ damaged_images = [damaged_barrier_tl, damaged_barrier_tc, damaged_barrier_tr,
 
 
 class Barrier(Sprite):
-    def __init__(self, ai_settings, screen, type, x_pos, y_pos):
+    def __init__(self, ai_settings, screen, barrier_type, x_pos, y_pos):
         super(Barrier, self).__init__()
         self.screen = screen
         self.ai_settings = ai_settings
@@ -28,7 +27,7 @@ class Barrier(Sprite):
         0   1   2
         3   4   5
         '''
-        self.type = type
+        self.type = barrier_type
         self.image = images[self.type]
         self.rect = self.image.get_rect()
         self.health = 2

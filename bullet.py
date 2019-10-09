@@ -8,6 +8,7 @@ a_laser_b = pygame.image.load("images/a_laser_b.png")
 laser_a = [a_laser_a, p_laser_a]
 laser_b = [a_laser_b, p_laser_b]
 
+
 class Bullet(Sprite):
         def __init__(self, ai_settings, screen, source, is_ship):
             super(Bullet, self).__init__()
@@ -18,10 +19,13 @@ class Bullet(Sprite):
                 self.bullet_type = 1
             self.image = laser_a[self.bullet_type]
             self.frame = 0
-
             self.rect = self.image.get_rect()
             self.rect.centerx = source.rect.centerx
-            self.rect.top = source.rect.top
+
+            if is_ship:
+                self.rect.top = source.rect.top
+            else:
+                self.rect.top = source.rect.bottom
 
             self.y = float(self.rect.y)
 

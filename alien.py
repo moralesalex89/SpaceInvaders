@@ -23,26 +23,33 @@ class Alien(Sprite):
         self.screen = screen
         self.ai_settings = ai_settings
         self.sounds = sounds
+
+        # alien's type, used for list indexing and event checking
         self.type = alien_type
         self.image = alien_a[self.type]
+
+        # checks parameter alt_frame, if True will start the alien from its 2nd animation state
         if alt_frame:
             self.rotate()
-        self.rect = self.image.get_rect()
 
+        self.rect = self.image.get_rect()
         self.rect.x = self.rect.width
         self.rect.y = self.rect.height
 
         self.x = float(self.rect.x)
 
-        self.score = self.get_score()
+        # x, y coordinates, created but not initialized
+        #  When initialized with save_spawn() allows alien to jump back to starting position
+        self.start_x = 0
+        self.start_y = 0
 
     def get_score(self):
         if self.type == 0:
-            return 400
+            return self.ai_settings.alien_points_a
         elif self.type == 1:
-            return 200
+            return self.ai_settings.alien_points_b
         else:
-            return 100
+            return self.ai_settings.alien_points_c
 
     def blitme(self):
         self.screen.blit(self.image, self.rect)

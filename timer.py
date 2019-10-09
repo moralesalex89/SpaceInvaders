@@ -1,7 +1,3 @@
-import time
-import pygame
-
-
 class Timer:
 
     def __init__(self, refresh):
